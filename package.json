@@ -18,9 +18,7 @@
     "AppMessage"
   ],
   "dependencies": {
-    "@smallstoneapps/linked-list": "^1.3.0",
     "pebble-events": "^1.0.2",
-    "pebble-simple-app-message": "../pebble-simple-app-message",
     "plite": "0.0.4",
     "pebble-string-dict": "^1.0.1"
   },
