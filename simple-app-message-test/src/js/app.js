@@ -9,7 +9,7 @@ var testData = {
 };
 
 Pebble.addEventListener('ready', function() {
-  simpleAppMessage.send(testData, function(e) {
+  simpleAppMessage.send('TEST', testData, function(e) {
     console.log('KEEGAN: e', e);
   });
 });

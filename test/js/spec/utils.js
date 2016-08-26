@@ -13,13 +13,15 @@ describe('utils', function() {
       var result = utils.objectToMessageKeys({
         SIMPLE_APP_MESSAGE_CHUNK_DATA: [1, 2, 3],
         SIMPLE_APP_MESSAGE_CHUNK_SIZE: 64,
-        SIMPLE_APP_MESSAGE_CHUNK_TOTAL: 2
+        SIMPLE_APP_MESSAGE_CHUNK_REMAINING: 2,
+        SIMPLE_APP_MESSAGE_CHUNK_NAMESPACE: 'TEST'
       });
 
       assert.deepEqual(result, {
         0: [1, 2, 3],
         1: 64,
-        2: 2
+        2: 2,
+        3: 'TEST'
       });
     });
   });

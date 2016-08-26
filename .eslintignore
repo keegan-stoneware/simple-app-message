@@ -3,3 +3,5 @@ dist/
 tmp/
 build/
 simple-app-message-test/build/
+simple-app-message-test/dist/
+simple-app-message-test/node_modules/

@@ -26,7 +26,8 @@ module.exports.messageKeys = function() {
   return {
     SIMPLE_APP_MESSAGE_CHUNK_DATA: 0,
     SIMPLE_APP_MESSAGE_CHUNK_SIZE: 1,
-    SIMPLE_APP_MESSAGE_CHUNK_TOTAL: 2
+    SIMPLE_APP_MESSAGE_CHUNK_REMAINING: 2,
+    SIMPLE_APP_MESSAGE_CHUNK_NAMESPACE: 3
   };
 };
 
@@ -40,8 +41,10 @@ module.exports.appMessageData = function(data, chunkTotal) {
   };
   var _chunkTotal = chunkTotal || 1;
   var result = {};
-  result[module.exports.messageKeys.SIMPLE_APP_MESSAGE_CHUNK_DATA] = _data;
-  result[module.exports.messageKeys.SIMPLE_APP_MESSAGE_CHUNK_TOTAL] = _chunkTotal;
+  var messageKeys = module.exports.messageKeys;
+  result[messageKeys.SIMPLE_APP_MESSAGE_CHUNK_DATA] = _data;
+  result[messageKeys.SIMPLE_APP_MESSAGE_CHUNK_REMAINING] = _chunkTotal;
+  result[messageKeys.SIMPLE_APP_MESSAGE_CHUNK_NAMESPACE] = 'NAMESPACE';
 
   return result;
 };

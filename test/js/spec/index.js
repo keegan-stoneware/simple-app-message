@@ -19,11 +19,11 @@ describe('simpleAppMessage', function() {
     it('fetches the chunk size if not already defined then calls ._sendData()',
     function(done) {
       var appMessageData = fixtures.appMessageData();
-      sinon.stub(simpleAppMessage, '_sendData').callsArg(1);
+      sinon.stub(simpleAppMessage, '_sendData').callsArg(2);
 
       Pebble.sendAppMessage.callsArg(1);
 
-      simpleAppMessage.send(appMessageData, function() {
+      simpleAppMessage.send('TEST', appMessageData, function() {
         assert.strictEqual(simpleAppMessage._sendData.callCount, 1);
         simpleAppMessage._sendData.restore();
         done();
@@ -44,13 +44,13 @@ describe('simpleAppMessage', function() {
     it('does not fetch the chunk size if already defined then calls ._sendData',
     function(done) {
       var appMessageData = fixtures.appMessageData();
-      sinon.stub(simpleAppMessage, '_sendData').callsArg(1);
+      sinon.stub(simpleAppMessage, '_sendData').callsArg(2);
 
       simpleAppMessage._chunkSize = 64;
 
       Pebble.sendAppMessage.callsArg(1);
 
-      simpleAppMessage.send(appMessageData, function() {
+      simpleAppMessage.send('TEST', appMessageData, function() {
         assert.strictEqual(simpleAppMessage._sendData.callCount, 1);
         simpleAppMessage._sendData.restore();
         done();
@@ -64,7 +64,7 @@ describe('simpleAppMessage', function() {
 
     it('throws if the returned chunk size is zero', function() {
       var error = {error: 'someError'};
-      simpleAppMessage.send({}, function() {});
+      simpleAppMessage.send('TEST', {}, function() {});
       sinon.stub(simpleAppMessage, '_sendData');
       sinon.stub(console, 'log');
 
@@ -82,7 +82,7 @@ describe('simpleAppMessage', function() {
     });
 
     it('logs an error for failed app messages', function() {
-      simpleAppMessage.send({}, function() {});
+      simpleAppMessage.send('TEST', {}, function() {});
 
       assert.throws(function() {
         Pebble.addEventListener
@@ -107,18 +107,21 @@ describe('simpleAppMessage', function() {
       var data = {test1: 'value1', test2: 'value2'};
 
       sinon.spy(simpleAppMessage, '_sendChunk');
-      simpleAppMessage._chunkSize = 16;
+      simpleAppMessage._chunkSize = 12;
 
       Pebble.sendAppMessage.onFirstCall().callsArg(1);
       Pebble.sendAppMessage.onSecondCall().callsArg(1);
+      Pebble.sendAppMessage.onThirdCall().callsArg(1);
 
-      simpleAppMessage._sendData(data, callback);
+      simpleAppMessage._sendData('TEST', data, callback);
 
-      var chunk1 = serialize(data).slice(0, 16);
-      var chunk2 = serialize(data).slice(16);
+      var chunk1 = serialize(data).slice(0, 12);
+      var chunk2 = serialize(data).slice(12, 24);
+      var chunk3 = serialize(data).slice(24);
       sinon.assert.callOrder(
-        simpleAppMessage._sendChunk.withArgs(chunk1, 2),
-        simpleAppMessage._sendChunk.withArgs(chunk2, 2),
+        simpleAppMessage._sendChunk.withArgs('TEST', chunk1, 2),
+        simpleAppMessage._sendChunk.withArgs('TEST', chunk2, 1),
+        simpleAppMessage._sendChunk.withArgs('TEST', chunk3, 0),
         callback
       );
 
@@ -135,7 +138,8 @@ describe('simpleAppMessage', function() {
       // fail on second
       Pebble.sendAppMessage.onSecondCall().callsArgWith(2, expectedError);
 
-      simpleAppMessage._sendData({test1: 'TEST1', test2: 'TEST2'}, function(error) {
+      var testData = {test1: 'TEST1', test2: 'TEST2'};
+      simpleAppMessage._sendData('TEST', testData, function(error) {
         assert.deepEqual(error, expectedError);
         done();
       });
@@ -148,7 +152,8 @@ describe('simpleAppMessage', function() {
       Pebble.sendAppMessage.onFirstCall().callsArg(1);
       Pebble.sendAppMessage.onSecondCall().callsArgWith(1);
 
-      simpleAppMessage._sendData({test1: 'TEST1', test2: 'TEST2'}, function(error) {
+      var testData = {test1: 'TEST1', test2: 'TEST2'};
+      simpleAppMessage._sendData('TEST', testData, function(error) {
         assert.strictEqual(typeof error, 'undefined');
         done();
       });
@@ -159,11 +164,12 @@ describe('simpleAppMessage', function() {
   describe('._sendChunk', function() {
     it('sends the chunk with the correct data and returns a promise', function() {
       var chunk = serialize({test1: 'TEST1', test2: 'TEST2'});
-      var result = simpleAppMessage._sendChunk(chunk, 1);
+      var result = simpleAppMessage._sendChunk('TEST', chunk, 1);
 
       sinon.assert.calledWith(Pebble.sendAppMessage, utils.objectToMessageKeys({
         SIMPLE_APP_MESSAGE_CHUNK_DATA: chunk,
-        SIMPLE_APP_MESSAGE_CHUNK_TOTAL: 1
+        SIMPLE_APP_MESSAGE_CHUNK_REMAINING: 1,
+        SIMPLE_APP_MESSAGE_CHUNK_NAMESPACE: 'TEST'
       }));
 
       assert.strictEqual(typeof result.then, 'function');

@@ -13,11 +13,12 @@ var simpleAppMessage = {};
 simpleAppMessage._chunkSize = 0;
 
 /**
+ * @param {string} namespace
  * @param {object} data
  * @param {function} callback
  * @return {void}
  */
-simpleAppMessage.send = function(data, callback) {
+simpleAppMessage.send = function(namespace, data, callback) {
   var self = this;
 
   if (!self._chunkSize) {
@@ -37,23 +38,24 @@ simpleAppMessage.send = function(data, callback) {
       SIMPLE_APP_MESSAGE_CHUNK_SIZE: 1
     }), function() {
       // success
-      self._sendData(data, callback);
+      self._sendData(namespace, data, callback);
     }, function(error) {
       console.log('simpleAppMessage: Failed to request chunk size!');
       console.log(JSON.stringify(error));
     });
   } else {
-    self._sendData(data, callback);
+    self._sendData(namespace, data, callback);
   }
 };
 
 /**
  * @private
+ * @param {string} namespace
  * @param {object} data
  * @param {function} callback
  * @return {void}
  */
-simpleAppMessage._sendData = function(data, callback) {
+simpleAppMessage._sendData = function(namespace, data, callback) {
   var self = this;
   var dataSerialized = serialize(data);
   var chunks = [];
@@ -63,9 +65,9 @@ simpleAppMessage._sendData = function(data, callback) {
   }
 
   var chain = Plite.resolve(true);
-  chunks.forEach(function(chunk) {
+  chunks.forEach(function(chunk, index) {
     chain = chain.then(function() {
-      return self._sendChunk(chunk, chunks.length);
+      return self._sendChunk(namespace, chunk, chunks.length - index - 1);
     });
   });
 
@@ -75,15 +77,17 @@ simpleAppMessage._sendData = function(data, callback) {
 
 /**
  * @private
+ * @param {string} namespace
  * @param {object} data
- * @param {number} total
+ * @param {number} remainingChunks
  * @return {Plite}
  */
-simpleAppMessage._sendChunk = function(data, total) {
+simpleAppMessage._sendChunk = function(namespace, data, remainingChunks) {
   return Plite(function(resolve, reject) {
     Pebble.sendAppMessage(objectToMessageKeys({
       SIMPLE_APP_MESSAGE_CHUNK_DATA: data,
-      SIMPLE_APP_MESSAGE_CHUNK_TOTAL: total
+      SIMPLE_APP_MESSAGE_CHUNK_REMAINING: remainingChunks,
+      SIMPLE_APP_MESSAGE_CHUNK_NAMESPACE: namespace
     }), resolve, reject);
   });
 };
