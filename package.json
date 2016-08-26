@@ -1,7 +1,21 @@
 {
-  "name": "pebble-simple-app-message",
-  "author": "MakeAwesomeHappen",
+  "name": "simple-app-message",
+  "author": "",
   "version": "1.0.0",
+  "description": "A library to simplify interacting with Pebble's AppMessage API.",
+  "main": "src/js/index.js",
+  "directories": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/keegan-lillo/simple-app-message.git"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/keegan-lillo/simple-app-message/issues"
+  },
+  "homepage": "https://github.com/keegan-lillo/simple-app-message#readme",
   "files": [
     "dist.zip"
   ],
