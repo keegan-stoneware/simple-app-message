@@ -14,7 +14,7 @@ set(SOURCES
 set(INCLUDES
   ~/Library/Application\ Support/Pebble\ SDK/SDKs/current/sdk-core/pebble/basalt/include
   ./node_modules/pebble-events/dist/include
-  ./node_modules/pebble-simple-app-message/dist/include
+  ./node_modules/simple-app-message/dist/include
   ./node_modules/pebble-string-dict/dist/include
   ./build/include
   ./build

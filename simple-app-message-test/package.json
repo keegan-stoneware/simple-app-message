@@ -10,7 +10,7 @@
   },
   "private": true,
   "dependencies": {
-    "pebble-simple-app-message": "../"
+    "simple-app-message": "../"
   },
   "pebble": {
     "displayName": "simple-app-message-test",

@@ -1,5 +1,5 @@
 'use strict';
-var simpleAppMessage = require('pebble-simple-app-message');
+var simpleAppMessage = require('simple-app-message');
 var testData = {
   keyNull: null,
   keyBool: true,

@@ -1,5 +1,5 @@
 #include <pebble.h>
-#include "pebble-simple-app-message/pebble-simple-app-message.h"
+#include "simple-app-message/simple-app-message.h"
 
 static Window *s_window;
 static TextLayer *s_text_layer;
