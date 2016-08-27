@@ -10,16 +10,26 @@ var sinon = require('sinon');
 var serialize = require('../../../src/js/lib/serialize');
 
 describe('simpleAppMessage', function() {
+  var originalTimeout = simpleAppMessage._timeout;
+
   beforeEach(function() {
     stubs.Pebble();
     simpleAppMessage._chunkSize = 0;
+    simpleAppMessage._timeout = 50;
+  });
+
+  afterEach(function() {
+    simpleAppMessage._timeout = originalTimeout;
   });
 
   describe('.send', function() {
     it('fetches the chunk size if not already defined then calls ._sendData()',
     function(done) {
       var appMessageData = fixtures.appMessageData();
-      sinon.stub(simpleAppMessage, '_sendData').callsArg(2);
+      sinon.stub(simpleAppMessage, '_sendData', function(namespace, data, callback) {
+        assert.strictEqual(simpleAppMessage._chunkSize, 64);
+        callback();
+      });
 
       Pebble.sendAppMessage.callsArg(1);
 
@@ -38,7 +48,6 @@ describe('simpleAppMessage', function() {
       assert(Pebble.sendAppMessage.calledWith(
         utils.objectToMessageKeys({ SIMPLE_APP_MESSAGE_CHUNK_SIZE: 1 })
       ));
-      assert.strictEqual(simpleAppMessage._chunkSize, 64);
     });
 
     it('does not fetch the chunk size if already defined then calls ._sendData',
@@ -62,12 +71,13 @@ describe('simpleAppMessage', function() {
       assert.strictEqual(simpleAppMessage._chunkSize, 64);
     });
 
-    it('throws if the returned chunk size is zero', function() {
+    it('logs an error for failed app messages', function() {
       var error = {error: 'someError'};
-      simpleAppMessage.send('TEST', {}, function() {});
+      var callbackStub = sinon.stub();
       sinon.stub(simpleAppMessage, '_sendData');
       sinon.stub(console, 'log');
 
+      simpleAppMessage.send('TEST', {}, callbackStub);
       Pebble.sendAppMessage.callArgWith(2, error);
 
       assert(Pebble.sendAppMessage.calledWith(
@@ -76,12 +86,13 @@ describe('simpleAppMessage', function() {
 
       assert(console.log.calledWithMatch('Failed to request chunk size'));
       assert(console.log.calledWith(JSON.stringify(error)));
+      assert(callbackStub.calledWith(error));
 
       simpleAppMessage._sendData.restore();
       console.log.restore();
     });
 
-    it('logs an error for failed app messages', function() {
+    it('throws if the returned chunk size is zero', function() {
       simpleAppMessage.send('TEST', {}, function() {});
 
       assert.throws(function() {
@@ -95,6 +106,45 @@ describe('simpleAppMessage', function() {
         utils.objectToMessageKeys({ SIMPLE_APP_MESSAGE_CHUNK_SIZE: 1 })
       ));
       assert.strictEqual(simpleAppMessage._chunkSize, 0);
+    });
+
+    it('does nothing if it receives an appMessage without chunk size in the payload',
+    function(done) {
+      var appMessageData = fixtures.appMessageData();
+
+      sinon.stub(simpleAppMessage, '_sendData').callsArg(2);
+      Pebble.sendAppMessage.callsArg(1);
+
+      simpleAppMessage.send('TEST', appMessageData, function() {
+        assert.strictEqual(simpleAppMessage._sendData.callCount, 1);
+        simpleAppMessage._sendData.restore();
+        done();
+      });
+
+      Pebble.addEventListener
+        .withArgs('appmessage')
+        .callArgWith(1, {
+          payload: { 1234: 'Not for you' }
+        });
+      Pebble.addEventListener
+        .withArgs('appmessage')
+        .callArgWith(1, {
+          payload: utils.objectToMessageKeys({ SIMPLE_APP_MESSAGE_CHUNK_SIZE: 64 })
+        });
+    });
+
+    it('fires error callback if chunk size request timed out', function(done) {
+      var startTime = new Date().getTime();
+
+      simpleAppMessage.send('TEST', {}, function(error) {
+        assert.deepEqual(
+          error,
+          'simpleAppMessage: Request for chunk size timed out.'
+        );
+        var now = new Date().getTime();
+        assert(now >= startTime + simpleAppMessage._timeout);
+        done();
+      });
     });
 
   });
@@ -157,7 +207,12 @@ describe('simpleAppMessage', function() {
         assert.strictEqual(typeof error, 'undefined');
         done();
       });
+    });
 
+    it('throws if chunk size is missing', function() {
+      assert.throws(function() {
+        simpleAppMessage._sendData('TEST', {}, function() {});
+      }, /simpleAppMessage:/);
     });
   });
 

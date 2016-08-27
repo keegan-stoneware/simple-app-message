@@ -10,6 +10,7 @@ var mockRequire = require('mock-require');
 module.exports.Pebble = function() {
   global.Pebble = {
     addEventListener: sinon.stub(),
+    removeEventListener: sinon.stub(),
     openURL: sinon.stub(),
     sendAppMessage: sinon.stub(),
     getActiveWatchInfo: sinon.stub().returns(fixtures.activeWatchInfo()),

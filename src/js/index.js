@@ -11,6 +11,7 @@ var Plite = require('plite');
 var simpleAppMessage = {};
 
 simpleAppMessage._chunkSize = 0;
+simpleAppMessage._timeout = 10000;
 
 /**
  * @param {string} namespace
@@ -20,29 +21,46 @@ simpleAppMessage._chunkSize = 0;
  */
 simpleAppMessage.send = function(namespace, data, callback) {
   var self = this;
+  var requestTimeout;
+
+  var chunkSizeResponseHandler = function(e) {
+    var chunkSize = e.payload[messageKeys.SIMPLE_APP_MESSAGE_CHUNK_SIZE];
+
+    // this app message was not meant for us.
+    if (typeof chunkSize === 'undefined') {
+      return;
+    }
+
+    Pebble.removeEventListener('appmessage', chunkSizeResponseHandler);
+    clearTimeout(requestTimeout);
+
+    if (!chunkSize || chunkSize <= 0) {
+      throw new Error('simpleAppMessage: Fetched chunk size is invalid.');
+    }
+
+    self._chunkSize = chunkSize;
+    self._sendData(namespace, data, callback);
+  };
 
   if (!self._chunkSize) {
 
     // fetch chunk size
-    Pebble.addEventListener('appmessage', function(e) {
-      var chunkSize = e.payload[messageKeys.SIMPLE_APP_MESSAGE_CHUNK_SIZE];
+    Pebble.addEventListener('appmessage', chunkSizeResponseHandler);
 
-      if (!chunkSize || chunkSize <= 0) {
-        throw new Error('simpleAppMessage: Fetched chunk size is invalid');
+    Pebble.sendAppMessage(
+      objectToMessageKeys({SIMPLE_APP_MESSAGE_CHUNK_SIZE: 1}),
+      function() {},
+      function(error) {
+        console.log('simpleAppMessage: Failed to request chunk size.');
+        console.log(JSON.stringify(error));
+        callback(error);
       }
+    );
 
-      self._chunkSize = chunkSize;
-    });
-
-    Pebble.sendAppMessage(objectToMessageKeys({
-      SIMPLE_APP_MESSAGE_CHUNK_SIZE: 1
-    }), function() {
-      // success
-      self._sendData(namespace, data, callback);
-    }, function(error) {
-      console.log('simpleAppMessage: Failed to request chunk size!');
-      console.log(JSON.stringify(error));
-    });
+    requestTimeout = setTimeout(function() {
+      Pebble.removeEventListener('appmessage', chunkSizeResponseHandler);
+      callback('simpleAppMessage: Request for chunk size timed out.');
+    }, self._timeout);
   } else {
     self._sendData(namespace, data, callback);
   }
@@ -59,6 +77,10 @@ simpleAppMessage._sendData = function(namespace, data, callback) {
   var self = this;
   var dataSerialized = serialize(data);
   var chunks = [];
+
+  if (!self._chunkSize) {
+    throw new Error('simpleAppMessage: Chunk size is invalid');
+  }
 
   while (dataSerialized.length > 0) {
     chunks.push(dataSerialized.splice(0, self._chunkSize));
