@@ -9,19 +9,41 @@
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 
 typedef struct SimpleAppMessageState {
+  bool initialized;
   LinkedRoot *namespace_list;
-  uint32_t max_inbox_size;
+  uint32_t chunk_size;
 } SimpleAppMessageState;
 
 static SimpleAppMessageState s_sam_state;
 
-void simple_app_message_request_inbox_size(uint32_t size) {
-  s_sam_state.max_inbox_size = MAX(size, s_sam_state.max_inbox_size);
+static void prv_app_message_inbox_received_callback(DictionaryIterator *iterator, void *context) {
+  // TODO update our message assembly state
+  // TODO if we're done processing chunks, pass the resulting StringDict to the appropriate callback
+}
+
+static void prv_app_message_inbox_dropped_callback(AppMessageResult reason, void *context) {
+  // TODO reset message assembly state
+}
+
+void simple_app_message_init_with_chunk_size(uint32_t chunk_size) {
+  s_sam_state.chunk_size = MAX(chunk_size, s_sam_state.chunk_size);
+
+  events_app_message_request_inbox_size(chunk_size);
+
+  if (s_sam_state.initialized) {
+    return;
+  }
+
+  events_app_message_subscribe_handlers((EventAppMessageHandlers) {
+    .received = prv_app_message_inbox_received_callback,
+    .dropped = prv_app_message_inbox_dropped_callback,
+  }, NULL);
+
+  s_sam_state.initialized = true;
 }
 
 AppMessageResult simple_app_message_open(void) {
-  return app_message_open(s_sam_state.max_inbox_size, 0);
-  // TODO also need to register main callbacks here
+  return events_app_message_open();
 }
 
 void simple_app_message_register_callbacks(const char *namespace_name,

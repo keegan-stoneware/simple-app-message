@@ -8,7 +8,7 @@ typedef struct SimpleAppMessageCallbacks {
   SimpleAppMessageReceivedCallback message_received;
 } SimpleAppMessageCallbacks;
 
-void simple_app_message_request_inbox_size(uint32_t size);
+void simple_app_message_init_with_chunk_size(uint32_t chunk_size);
 
 AppMessageResult simple_app_message_open(void);
 
