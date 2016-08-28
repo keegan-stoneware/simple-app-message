@@ -219,11 +219,12 @@ describe('simpleAppMessage', function() {
   describe('._sendChunk', function() {
     it('sends the chunk with the correct data and returns a promise', function() {
       var chunk = serialize({test1: 'TEST1', test2: 'TEST2'});
-      var result = simpleAppMessage._sendChunk('TEST', chunk, 1);
+      var result = simpleAppMessage._sendChunk('TEST', chunk, 1, 2);
 
       sinon.assert.calledWith(Pebble.sendAppMessage, utils.objectToMessageKeys({
         SIMPLE_APP_MESSAGE_CHUNK_DATA: chunk,
         SIMPLE_APP_MESSAGE_CHUNK_REMAINING: 1,
+        SIMPLE_APP_MESSAGE_CHUNK_TOTAL: 2,
         SIMPLE_APP_MESSAGE_CHUNK_NAMESPACE: 'TEST'
       }));
 

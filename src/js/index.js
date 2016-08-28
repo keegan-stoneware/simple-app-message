@@ -89,7 +89,8 @@ simpleAppMessage._sendData = function(namespace, data, callback) {
   var chain = Plite.resolve(true);
   chunks.forEach(function(chunk, index) {
     chain = chain.then(function() {
-      return self._sendChunk(namespace, chunk, chunks.length - index - 1);
+      var remaining = chunks.length - index - 1;
+      return self._sendChunk(namespace, chunk, remaining, chunks.length);
     });
   });
 
@@ -101,14 +102,16 @@ simpleAppMessage._sendData = function(namespace, data, callback) {
  * @private
  * @param {string} namespace
  * @param {object} data
- * @param {number} remainingChunks
+ * @param {number} remaining - remaining chunks
+ * @param {number} total - total number of chunks
  * @return {Plite}
  */
-simpleAppMessage._sendChunk = function(namespace, data, remainingChunks) {
+simpleAppMessage._sendChunk = function(namespace, data, remaining, total) {
   return Plite(function(resolve, reject) {
     Pebble.sendAppMessage(objectToMessageKeys({
       SIMPLE_APP_MESSAGE_CHUNK_DATA: data,
-      SIMPLE_APP_MESSAGE_CHUNK_REMAINING: remainingChunks,
+      SIMPLE_APP_MESSAGE_CHUNK_REMAINING: remaining,
+      SIMPLE_APP_MESSAGE_CHUNK_TOTAL: total,
       SIMPLE_APP_MESSAGE_CHUNK_NAMESPACE: namespace
     }), resolve, reject);
   });

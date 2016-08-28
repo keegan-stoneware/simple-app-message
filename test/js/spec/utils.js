@@ -14,6 +14,7 @@ describe('utils', function() {
         SIMPLE_APP_MESSAGE_CHUNK_DATA: [1, 2, 3],
         SIMPLE_APP_MESSAGE_CHUNK_SIZE: 64,
         SIMPLE_APP_MESSAGE_CHUNK_REMAINING: 2,
+        SIMPLE_APP_MESSAGE_CHUNK_TOTAL: 3,
         SIMPLE_APP_MESSAGE_CHUNK_NAMESPACE: 'TEST'
       });
 
@@ -21,7 +22,8 @@ describe('utils', function() {
         0: [1, 2, 3],
         1: 64,
         2: 2,
-        3: 'TEST'
+        3: 3,
+        4: 'TEST'
       });
     });
   });
