@@ -1,49 +1,63 @@
-#include <pebble.h>
 #include "simple-app-message/simple-app-message.h"
 
-static Window *s_window;
-static TextLayer *s_text_layer;
+#include <inttypes.h>
+#include <pebble.h>
 
-static StringDict* dict;
+#define SIMPLE_APP_MESSAGE_NAMESPACE ("TEST")
+#define SIMPLE_APP_MESSAGE_CHUNK_SIZE (512)
 
-static void prv_window_load(Window *window) {
-  dict = string_dict_create();
+#define CHECK_STRING_DICT(dict, type, key, formatter) \
+    (APP_LOG(APP_LOG_LEVEL_INFO, key": "formatter, string_dict_get_##type((dict), (key))))
 
-  string_dict_write_null(dict, "nullKey");
-  string_dict_write_bool(dict, "trueKey", true);
-  string_dict_write_bool(dict, "falseKey", false);
-  string_dict_write_int(dict, "intKey", 3542);
-  string_dict_write_string(dict, "strKey", "Hello World!");
-  string_dict_write_data(dict, "dataKey", 12, dict);
+#define CHECK_STRING_DICT_DATA(dict, type, key, length, formatter)     \
+  do {                                                                 \
+    const type *data = string_dict_get_data((dict), (key));            \
+    if (data) {                                                        \
+      for (int i = 0; i < (length); i++) {                             \
+        APP_LOG(APP_LOG_LEVEL_INFO, key"[%d]: "formatter, i, data[i]); \
+      }                                                                \
+    }                                                                  \
+  } while (0)
+
+static void prv_simple_app_message_received_callback(const StringDict *message, void *context) {
+  // TODO need to fix StringDict functions to take in const dictionary argument
+  StringDict *mutable_message = (StringDict *)message;
+
+  // We're expecting:
+  // - keyNull: null,
+  // - keyBool: true,
+  // - keyInt: 257,
+  // - keyData: [1, 2, 3, 4],
+  // - keyString: "test"
+  CHECK_STRING_DICT(mutable_message, int, "keyNull", "%"PRIu32);
+  CHECK_STRING_DICT(mutable_message, bool, "keyBool", "%d");
+  CHECK_STRING_DICT(mutable_message, int, "keyInt", "%"PRIu32);
+  CHECK_STRING_DICT_DATA(mutable_message, int, "keyData", 4, "%d");
+  CHECK_STRING_DICT(mutable_message, string, "keyString", "%s");
 }
 
 static void prv_window_unload(Window *window) {
-  StringDict *d = string_dict_get_data(dict, "dataKey");
-
-  APP_LOG(APP_LOG_LEVEL_INFO, "trueKey: %s", string_dict_get_bool(d, "trueKey") ? "true" : "false");
-  APP_LOG(APP_LOG_LEVEL_INFO, "falseKey: %s", string_dict_get_bool(d, "falseKey") ? "true" : "false");
-  APP_LOG(APP_LOG_LEVEL_INFO, "intKey: %ld", string_dict_get_int(d, "intKey"));
-  APP_LOG(APP_LOG_LEVEL_INFO, "strKey: %s", string_dict_get_string(d, "strKey"));
-
-  string_dict_destroy(dict);
+  window_destroy(window);
 }
 
 static void prv_init(void) {
-  s_window = window_create();
-  window_set_window_handlers(s_window, (WindowHandlers) {
-    .load = prv_window_load,
+  const SimpleAppMessageCallbacks simple_app_message_callbacks = (SimpleAppMessageCallbacks) {
+    .message_received = prv_simple_app_message_received_callback,
+  };
+  simple_app_message_register_callbacks(SIMPLE_APP_MESSAGE_NAMESPACE, &simple_app_message_callbacks,
+                                        NULL);
+  simple_app_message_init_with_chunk_size(SIMPLE_APP_MESSAGE_CHUNK_SIZE);
+  simple_app_message_open();
+
+  Window *window = window_create();
+  window_set_window_handlers(window, (WindowHandlers) {
     .unload = prv_window_unload,
   });
 
-  window_stack_push(s_window, true);
-}
-
-static void prv_deinit(void) {
-  window_destroy(s_window);
+  window_stack_push(window, true);
 }
 
 int main(void) {
   prv_init();
   app_event_loop();
-  prv_deinit();
 }
