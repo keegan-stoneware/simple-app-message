@@ -16,7 +16,36 @@ typedef struct SimpleAppMessageState {
 
 static SimpleAppMessageState s_sam_state;
 
+static void prv_send_chunk_size_response(void) {
+  DictionaryIterator *chunk_size_message_iter;
+  const AppMessageResult chunk_size_begin_result =
+      app_message_outbox_begin(&chunk_size_message_iter);
+  if(chunk_size_begin_result != APP_MSG_OK) {
+    APP_LOG(APP_LOG_LEVEL_ERROR, "Failed to begin writing chunk size response, error code: %d",
+            chunk_size_begin_result);
+    return;
+  }
+
+  dict_write_uint32(chunk_size_message_iter, MESSAGE_KEY_SIMPLE_APP_MESSAGE_CHUNK_SIZE,
+                    s_sam_state.chunk_size);
+  const AppMessageResult chunk_size_send_result = app_message_outbox_send();
+  if (chunk_size_send_result != APP_MSG_OK) {
+    APP_LOG(APP_LOG_LEVEL_ERROR, "Failed to send chunk size response, error code: %d",
+            chunk_size_send_result);
+  }
+}
+
 static void prv_app_message_inbox_received_callback(DictionaryIterator *iterator, void *context) {
+  if (!s_sam_state.initialized) {
+    return;
+  }
+
+  // Send back the chunk size, if requested, and return
+  if (dict_find(iterator, MESSAGE_KEY_SIMPLE_APP_MESSAGE_CHUNK_SIZE)) {
+    APP_LOG(APP_LOG_LEVEL_INFO, "Received request for Simple App Message chunk size");
+    prv_send_chunk_size_response();
+    return;
+  }
   // TODO update our message assembly state
   // TODO if we're done processing chunks, pass the resulting StringDict to the appropriate callback
 }
