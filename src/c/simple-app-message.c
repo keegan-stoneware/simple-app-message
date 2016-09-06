@@ -8,10 +8,18 @@
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 
+typedef struct SimpleAppMessageAssemblyState {
+  char *namespace;
+  uint8_t *buffer;
+  uint32_t total_chunks;
+  uint32_t chunks_remaining;
+} SimpleAppMessageAssemblyState;
+
 typedef struct SimpleAppMessageState {
   bool initialized;
   LinkedRoot *namespace_list;
   uint32_t chunk_size;
+  SimpleAppMessageAssemblyState assembly_state;
 } SimpleAppMessageState;
 
 static SimpleAppMessageState s_sam_state;
@@ -42,15 +50,71 @@ static void prv_app_message_inbox_received_callback(DictionaryIterator *iterator
 
   // Send back the chunk size, if requested, and return
   if (dict_find(iterator, MESSAGE_KEY_SIMPLE_APP_MESSAGE_CHUNK_SIZE)) {
-    APP_LOG(APP_LOG_LEVEL_INFO, "Received request for Simple App Message chunk size");
+    APP_LOG(APP_LOG_LEVEL_INFO, "Received request for SimpleAppMessage chunk size");
     prv_send_chunk_size_response();
     return;
   }
-  // TODO update our message assembly state
-  // TODO if we're done processing chunks, pass the resulting StringDict to the appropriate callback
+
+  Tuple *message_namespace = dict_find(iterator, MESSAGE_KEY_SIMPLE_APP_MESSAGE_CHUNK_NAMESPACE);
+  Tuple *chunks_remaining = dict_find(iterator, MESSAGE_KEY_SIMPLE_APP_MESSAGE_CHUNK_REMAINING);
+  Tuple *total_chunks = dict_find(iterator, MESSAGE_KEY_SIMPLE_APP_MESSAGE_CHUNK_TOTAL);
+  Tuple *chunk_data = dict_find(iterator, MESSAGE_KEY_SIMPLE_APP_MESSAGE_CHUNK_DATA);
+  if (!message_namespace || !chunks_remaining || !total_chunks || !chunk_data) {
+    APP_LOG(APP_LOG_LEVEL_ERROR, "Unexpected SimpleAppMessage packet (missing required state)");
+    return;
+  }
+
+  // TODO probably remove me
+  APP_LOG(APP_LOG_LEVEL_INFO, "Received SimpleAppMessage for namespace %s",
+          message_namespace->value->cstring);
+
+  SimpleAppMessageAssemblyState *assembly_state = &s_sam_state.assembly_state;
+
+  const bool is_assembly_in_progress = (assembly_state->namespace && assembly_state->buffer);
+  const bool is_message_expected_for_assembly_in_progress =
+      (is_assembly_in_progress &&
+       (strcmp(assembly_state->namespace, message_namespace->value->cstring) == 0) &&
+       (assembly_state->total_chunks == total_chunks->value->uint32) &&
+       (assembly_state->chunks_remaining == (chunks_remaining->value->uint32 + 1)));
+  const bool is_message_expected_for_new_assembly =
+      (!is_assembly_in_progress &&
+       (chunks_remaining->value->uint32 == (total_chunks->value->uint32 - 1)));
+  const bool is_message_expected =
+      (is_message_expected_for_assembly_in_progress || is_message_expected_for_new_assembly);
+  if (!is_message_expected) {
+    // TODO reset assembly state
+    APP_LOG(APP_LOG_LEVEL_ERROR, "Unexpected SimpleAppMessage packet");
+    return;
+  }
+
+  if (!is_assembly_in_progress) {
+    char *namespace_copy =
+        malloc(strnlen(message_namespace->value->cstring, message_namespace->length));
+    if (!namespace_copy) {
+      APP_LOG(APP_LOG_LEVEL_ERROR, "Failed to malloc namespace copy for SimpleAppMessage assembly");
+      // TODO reset assembly state
+      return;
+    }
+    assembly_state->namespace = namespace_copy;
+
+    uint8_t *buffer = malloc(s_sam_state.chunk_size * total_chunks->value->uint32);
+    if (!buffer) {
+      // TODO error, reset state, and return
+    }
+  }
+  // TODO if no buffer or namespace in assembly state, create them now
+
+  // TODO update assembly state: copy chunk's data to buffer, decrement chunks_remaining
+
+  // TODO if we're done processing chunks, deserialize the buffer
+
+  // TODO if serialization failed, print error and reset message assembly state before returning
+
+  // TODO pass the deserialized StringDict to the appropriate callback based on namespace
 }
 
 static void prv_app_message_inbox_dropped_callback(AppMessageResult reason, void *context) {
+  SimpleAppMessageAssemblyState *assembly_state = &s_sam_state.assembly_state;
   // TODO reset message assembly state
 }
 
