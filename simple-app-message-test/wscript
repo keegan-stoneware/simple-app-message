@@ -4,6 +4,8 @@
 # Feel free to customize this to your needs.
 #
 import os.path
+import shutil
+import waflib
 
 top = '.'
 out = 'build'
@@ -11,6 +13,13 @@ out = 'build'
 
 def options(ctx):
     ctx.load('pebble_sdk')
+
+
+def distclean(ctx):
+    node_modules_dir = ctx.path.find_node('node_modules')
+    if node_modules_dir:
+        shutil.rmtree(node_modules_dir.abspath())
+    waflib.Scripting.distclean(ctx)
 
 
 def configure(ctx):
