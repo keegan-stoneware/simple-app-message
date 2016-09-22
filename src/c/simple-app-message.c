@@ -88,8 +88,9 @@ static void prv_app_message_inbox_received_callback(DictionaryIterator *iterator
   }
 
   if (!is_assembly_in_progress) {
-    char *namespace_copy =
-        malloc(strnlen(message_namespace->value->cstring, message_namespace->length));
+    // TODO replace with commented out strnlen usage once Pebble supports strnlen
+    char *namespace_copy = malloc(strlen(message_namespace->value->cstring));
+       // malloc(strnlen(message_namespace->value->cstring, message_namespace->length));
     if (!namespace_copy) {
       APP_LOG(APP_LOG_LEVEL_ERROR, "Failed to malloc namespace copy for SimpleAppMessage assembly");
       // TODO reset assembly state
