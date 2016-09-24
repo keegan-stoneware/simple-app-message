@@ -1,15 +1,24 @@
-#include "simple-app-message/simple-app-message.h"
-
 #include <inttypes.h>
 #include <pebble.h>
+#include <simple-app-message/simple-app-message.h>
 
 #define SIMPLE_APP_MESSAGE_NAMESPACE ("TEST")
 #define SIMPLE_APP_MESSAGE_CHUNK_SIZE (512)
 
-#define CHECK_STRING_DICT(dict, type, key, formatter) \
-    (APP_LOG(APP_LOG_LEVEL_INFO, key": "formatter, string_dict_get_##type((dict), (key))))
+#define CHECK_SIMPLE_DICT_PRIMITIVE(dict, type, key, expected_value, formatter)              \
+  do {                                                                                       \
+    type data;                                                                               \
+    if (!simple_dict_get_##type((dict), (key), &data)) {                                     \
+      APP_LOG(APP_LOG_LEVEL_ERROR, key" not in dict");                                       \
+    } else if (data != (expected_value)) {                                                   \
+      APP_LOG(APP_LOG_LEVEL_ERROR, key": "formatter" != "formatter, data, (expected_value)); \
+    } else {                                                                                 \
+      APP_LOG(APP_LOG_LEVEL_INFO, key": "formatter, data);                                   \
+    }                                                                                        \
+  } while (0)
 
-#define CHECK_STRING_DICT_DATA(dict, type, key, length, formatter)     \
+/*
+#define CHECK_SIMPLE_DICT_DATA(dict, type, key, length, formatter)     \
   do {                                                                 \
     const type *data = string_dict_get_data((dict), (key));            \
     if (data) {                                                        \
@@ -18,22 +27,20 @@
       }                                                                \
     }                                                                  \
   } while (0)
+*/
 
-static void prv_simple_app_message_received_callback(const StringDict *message, void *context) {
-  // TODO need to fix StringDict functions to take in const dictionary argument
-  StringDict *mutable_message = (StringDict *)message;
-
+static void prv_simple_app_message_received_callback(const SimpleDict *message, void *context) {
   // We're expecting:
   // - keyNull: null,
   // - keyBool: true,
   // - keyInt: 257,
   // - keyData: [1, 2, 3, 4],
   // - keyString: "test"
-  CHECK_STRING_DICT(mutable_message, int, "keyNull", "%"PRIu32);
-  CHECK_STRING_DICT(mutable_message, bool, "keyBool", "%d");
-  CHECK_STRING_DICT(mutable_message, int, "keyInt", "%"PRIu32);
-  CHECK_STRING_DICT_DATA(mutable_message, int, "keyData", 4, "%d");
-  CHECK_STRING_DICT(mutable_message, string, "keyString", "%s");
+//  CHECK_SIMPLE_DICT_PRIMITIVE(message, int, "keyNull", 0, "%d");
+  CHECK_SIMPLE_DICT_PRIMITIVE(message, bool, "keyBool", true, "%d");
+  CHECK_SIMPLE_DICT_PRIMITIVE(message, int, "keyInt", 257, "%d");
+//  CHECK_SIMPLE_DICT_DATA(message, int, "keyData", 4, "%d");
+//  CHECK_SIMPLE_DICT(message, string, "keyString", "%s");
 }
 
 static void prv_window_unload(Window *window) {

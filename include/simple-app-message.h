@@ -1,8 +1,8 @@
 #pragma once
 
-#include "pebble-string-dict/pebble-string-dict.h"
+#include <simple-dict/simple-dict.h>
 
-typedef void (*SimpleAppMessageReceivedCallback)(const StringDict *message, void *context);
+typedef void (*SimpleAppMessageReceivedCallback)(const SimpleDict *message, void *context);
 
 typedef struct SimpleAppMessageCallbacks {
   SimpleAppMessageReceivedCallback message_received;

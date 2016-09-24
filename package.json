@@ -34,7 +34,7 @@
   "dependencies": {
     "pebble-events": "^1.0.2",
     "plite": "0.0.4",
-    "pebble-string-dict": "^1.0.1"
+    "simple-dict": "^1.0.0"
   },
   "pebble": {
     "projectType": "package",

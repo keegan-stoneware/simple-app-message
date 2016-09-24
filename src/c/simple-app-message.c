@@ -110,7 +110,7 @@ static void prv_app_message_inbox_received_callback(DictionaryIterator *iterator
 
   // TODO if serialization failed, print error and reset message assembly state before returning
 
-  // TODO pass the deserialized StringDict to the appropriate callback based on namespace
+  // TODO pass the deserialized SimpleDict to the appropriate callback based on namespace
 }
 
 static void prv_app_message_inbox_dropped_callback(AppMessageResult reason, void *context) {
