@@ -9,6 +9,22 @@
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 
+//! SIMPLE_APP_MESSAGE_CHUNK_DATA, SIMPLE_APP_MESSAGE_CHUNK_REMAINING,
+//! SIMPLE_APP_MESSAGE_CHUNK_TOTAL, SIMPLE_APP_MESSAGE_CHUNK_NAMESPACE
+//! @note: Doesn't include SIMPLE_APP_MESSAGE_CHUNK_SIZE because that should be sent in a separate
+//! message that only includes that key
+#define SIMPLE_APP_MESSAGE_MAX_NUM_KEYS_IN_MESSAGE (4)
+
+//! One uint32_t for each key, namespace max size bytes, one uint32_t for remaining chunk value,
+//! one uint32_t for total chunk value, and at least 1 byte for the chunk size data
+#define SIMPLE_APP_MESSAGE_MIN_INBOX_SIZE                              \
+    ((SIMPLE_APP_MESSAGE_MAX_NUM_KEYS_IN_MESSAGE * sizeof(uint32_t)) + \
+     SIMPLE_APP_MESSAGE_NAMESPACE_MAX_SIZE_BYTES +                     \
+     sizeof(uint32_t) +                                                \
+     sizeof(uint32_t) +                                                \
+     1                                                                 \
+    )
+
 typedef struct SimpleAppMessageState {
   bool open;
   // TODO change this to a ref counter so we can provide a safe deinitializer
@@ -109,6 +125,12 @@ static void prv_app_message_inbox_received_callback(DictionaryIterator *iterator
     return;
   }
 
+  if (strlen(message_namespace->value->cstring) + 1 > SIMPLE_APP_MESSAGE_NAMESPACE_MAX_SIZE_BYTES) {
+    APP_LOG(APP_LOG_LEVEL_WARNING,
+            "Ignoring SimpleAppMessage packet with namespace larger than max allowed size");
+    return;
+  }
+
   SimpleAppMessageNamespace *namespace =
       simple_app_message_namespace_find_in_list(s_sam_state.namespace_list,
                                                 message_namespace->value->cstring,
@@ -161,17 +183,32 @@ static void prv_app_message_inbox_dropped_callback(AppMessageResult reason, void
   APP_LOG(APP_LOG_LEVEL_ERROR, "SimpleAppMessage packet dropped, reason: %d", reason);
 }
 
-void simple_app_message_init_with_chunk_size(uint32_t chunk_size) {
+size_t simple_app_message_get_minimum_inbox_size(void) {
+  return SIMPLE_APP_MESSAGE_MIN_INBOX_SIZE;
+}
+
+size_t simple_app_message_get_maximum_inbox_size(void) {
+  return app_message_inbox_size_maximum();
+}
+
+bool simple_app_message_request_inbox_size(uint32_t inbox_size) {
   if (s_sam_state.open) {
-    return;
+    return false;
   }
 
-  s_sam_state.chunk_size = MAX(chunk_size, s_sam_state.chunk_size);
+  // Subtract one to account for the minimum chunk size of 1 included in
+  // SIMPLE_APP_MESSAGE_MIN_INBOX_SIZE
+  const int64_t requested_chunk_size = (int64_t)inbox_size - SIMPLE_APP_MESSAGE_MIN_INBOX_SIZE - 1;
+  if (requested_chunk_size <= 0) {
+    return false;
+  }
 
-  events_app_message_request_inbox_size(chunk_size);
+  s_sam_state.chunk_size = MAX((uint32_t)requested_chunk_size, s_sam_state.chunk_size);
+
+  events_app_message_request_inbox_size(inbox_size);
 
   if (s_sam_state.initialized) {
-    return;
+    return true;
   }
 
   events_app_message_subscribe_handlers((EventAppMessageHandlers) {
@@ -180,6 +217,7 @@ void simple_app_message_init_with_chunk_size(uint32_t chunk_size) {
   }, NULL);
 
   s_sam_state.initialized = true;
+  return true;
 }
 
 AppMessageResult simple_app_message_open(void) {
@@ -192,9 +230,14 @@ AppMessageResult simple_app_message_open(void) {
   return open_success;
 }
 
-void simple_app_message_register_callbacks(const char *namespace_name,
+bool simple_app_message_register_callbacks(const char *namespace_name,
                                            const SimpleAppMessageCallbacks *callbacks,
                                            void *context) {
+  if (!namespace_name ||
+      (strlen(namespace_name) + 1 > SIMPLE_APP_MESSAGE_NAMESPACE_MAX_SIZE_BYTES)) {
+    return false;
+  }
+
   if (!s_sam_state.namespace_list) {
     s_sam_state.namespace_list = linked_list_create_root();
   }
@@ -207,6 +250,7 @@ void simple_app_message_register_callbacks(const char *namespace_name,
   }
 
   simple_app_message_namespace_set_callbacks(namespace, callbacks, context);
+  return true;
 }
 
 void simple_app_message_deregister_callbacks(const char *namespace_name) {

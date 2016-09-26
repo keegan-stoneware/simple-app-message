@@ -3,7 +3,7 @@
 #include <simple-app-message/simple-app-message.h>
 
 #define SIMPLE_APP_MESSAGE_NAMESPACE ("TEST")
-#define SIMPLE_APP_MESSAGE_CHUNK_SIZE (512)
+#define SIMPLE_APP_MESSAGE_INBOX_SIZE (48)
 
 static bool prv_print_dict(const char *key, SimpleDictDataType type, const void *data,
                            size_t data_size, void *context) {
@@ -54,9 +54,22 @@ static void prv_init(void) {
   const SimpleAppMessageCallbacks simple_app_message_callbacks = (SimpleAppMessageCallbacks) {
     .message_received = prv_simple_app_message_received_callback,
   };
-  simple_app_message_register_callbacks(SIMPLE_APP_MESSAGE_NAMESPACE, &simple_app_message_callbacks,
-                                        NULL);
-  simple_app_message_init_with_chunk_size(SIMPLE_APP_MESSAGE_CHUNK_SIZE);
+  const bool register_success = simple_app_message_register_callbacks(SIMPLE_APP_MESSAGE_NAMESPACE,
+                                                                      &simple_app_message_callbacks,
+                                                                      NULL);
+  if (!register_success) {
+    APP_LOG(APP_LOG_LEVEL_ERROR, "Failed to register callbacks for namespace %s",
+            SIMPLE_APP_MESSAGE_NAMESPACE);
+    return;
+  }
+  const bool request_inbox_size_success =
+      simple_app_message_request_inbox_size(SIMPLE_APP_MESSAGE_INBOX_SIZE);
+  if (!request_inbox_size_success) {
+    APP_LOG(APP_LOG_LEVEL_ERROR, "Failed to request inbox size of %d",
+            SIMPLE_APP_MESSAGE_INBOX_SIZE);
+    return;
+  }
+
   simple_app_message_open();
 
   Window *window = window_create();
