@@ -82,6 +82,8 @@ static void prv_assembly_deserialize_callback(const char *key,
 
 static void prv_app_message_inbox_received_callback(DictionaryIterator *iterator, void *context) {
   if (!s_sam_state.initialized || !s_sam_state.open) {
+    APP_LOG(APP_LOG_LEVEL_ERROR,
+            "Received SimpleAppMessage packet but module not initialized/open");
     return;
   }
 
@@ -155,6 +157,10 @@ static void prv_app_message_inbox_received_callback(DictionaryIterator *iterator
   simple_dict_destroy(dict);
 }
 
+static void prv_app_message_inbox_dropped_callback(AppMessageResult reason, void *context) {
+  APP_LOG(APP_LOG_LEVEL_ERROR, "SimpleAppMessage packet dropped, reason: %d", reason);
+}
+
 void simple_app_message_init_with_chunk_size(uint32_t chunk_size) {
   if (s_sam_state.open) {
     return;
@@ -170,6 +176,7 @@ void simple_app_message_init_with_chunk_size(uint32_t chunk_size) {
 
   events_app_message_subscribe_handlers((EventAppMessageHandlers) {
     .received = prv_app_message_inbox_received_callback,
+    .dropped = prv_app_message_inbox_dropped_callback,
   }, NULL);
 
   s_sam_state.initialized = true;
