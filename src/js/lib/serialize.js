@@ -51,8 +51,9 @@ module.exports = function(data) {
           _pushResult(TYPES.DATA);
           _pushResult(
             [
-              (val.length >>> 8) & 255,
-              (val.length >>> 0) & 255
+              (val.length >>> 0) & 255,
+              (val.length >>> 8) & 255
+
             ].concat(val)
           );
         } else {
@@ -64,10 +65,10 @@ module.exports = function(data) {
       case 'number' :
         _pushResult(TYPES.INT);
         _pushResult([
-          (val >>> 24) & 255,
-          (val >>> 16) & 255,
+          (val >>> 0) & 255,
           (val >>> 8) & 255,
-          (val >>> 0) & 255
+          (val >>> 16) & 255,
+          (val >>> 24) & 255
         ]);
         break;
 
