@@ -23,6 +23,13 @@ describe('simpleAppMessage', function() {
   });
 
   describe('.send', function() {
+    it('errors if namespace is too long', function(done) {
+      simpleAppMessage.send('1'.repeat(17), {}, function(err) {
+        assert(err.error.match(/namespace.*16/i));
+        done();
+      });
+    });
+
     it('fetches the chunk size if not already defined then calls ._sendData()',
     function(done) {
       var appMessageData = fixtures.appMessageData();

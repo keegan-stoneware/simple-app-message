@@ -12,6 +12,7 @@ var simpleAppMessage = {};
 
 simpleAppMessage._chunkSize = 0;
 simpleAppMessage._timeout = 10000;
+simpleAppMessage._maxNamespaceLenth = 16;
 
 /**
  * @param {string} namespace
@@ -41,6 +42,14 @@ simpleAppMessage.send = function(namespace, data, callback) {
     self._chunkSize = chunkSize;
     self._sendData(namespace, data, callback);
   };
+
+  if (namespace.length > simpleAppMessage._maxNamespaceLenth) {
+    callback({
+      error: 'simpleAppMessage: namespace length must not exceed ' +
+             simpleAppMessage._maxNamespaceLenth
+    });
+    return;
+  }
 
   if (!self._chunkSize) {
 
