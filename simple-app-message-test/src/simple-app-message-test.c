@@ -5,42 +5,45 @@
 #define SIMPLE_APP_MESSAGE_NAMESPACE ("TEST")
 #define SIMPLE_APP_MESSAGE_CHUNK_SIZE (512)
 
-#define CHECK_SIMPLE_DICT_PRIMITIVE(dict, type, key, expected_value, formatter)              \
-  do {                                                                                       \
-    type data;                                                                               \
-    if (!simple_dict_get_##type((dict), (key), &data)) {                                     \
-      APP_LOG(APP_LOG_LEVEL_ERROR, key" not in dict");                                       \
-    } else if (data != (expected_value)) {                                                   \
-      APP_LOG(APP_LOG_LEVEL_ERROR, key": "formatter" != "formatter, data, (expected_value)); \
-    } else {                                                                                 \
-      APP_LOG(APP_LOG_LEVEL_INFO, key": "formatter, data);                                   \
-    }                                                                                        \
-  } while (0)
-
-/*
-#define CHECK_SIMPLE_DICT_DATA(dict, type, key, length, formatter)     \
-  do {                                                                 \
-    const type *data = string_dict_get_data((dict), (key));            \
-    if (data) {                                                        \
-      for (int i = 0; i < (length); i++) {                             \
-        APP_LOG(APP_LOG_LEVEL_INFO, key"[%d]: "formatter, i, data[i]); \
-      }                                                                \
-    }                                                                  \
-  } while (0)
-*/
+static bool prv_print_dict(const char *key, SimpleDictDataType type, const void *data,
+                           size_t data_size, void *context) {
+  switch (type) {
+    case SimpleDictDataType_Raw:
+      APP_LOG(APP_LOG_LEVEL_INFO, "%s: [", key);
+      for (size_t i = 0; i < data_size; i++) {
+        APP_LOG(APP_LOG_LEVEL_INFO, "  0x%02X,", ((uint8_t *)data)[i]);
+      }
+      APP_LOG(APP_LOG_LEVEL_INFO, "]");
+      return true;
+    case SimpleDictDataType_Bool: {
+      const bool value = *((bool *)data);
+      APP_LOG(APP_LOG_LEVEL_INFO, "%s: %s", key, value ? "true" : "false");
+      return true;
+    }
+    case SimpleDictDataType_Int: {
+      const int value = *((int *)data);
+      APP_LOG(APP_LOG_LEVEL_INFO, "%s: %d", key, value);
+      return true;
+    }
+    case SimpleDictDataType_String: {
+      const char *value = data;
+      APP_LOG(APP_LOG_LEVEL_INFO, "%s: %s", key, value);
+      return true;
+    }
+    case SimpleDictDataTypeCount:
+      break;
+  }
+  APP_LOG(APP_LOG_LEVEL_ERROR, "Unexpected type %d", type);
+  return false;
+}
 
 static void prv_simple_app_message_received_callback(const SimpleDict *message, void *context) {
-  // We're expecting:
-  // - keyNull: null,
-  // - keyBool: true,
-  // - keyInt: 257,
-  // - keyData: [1, 2, 3, 4],
-  // - keyString: "test"
-//  CHECK_SIMPLE_DICT_PRIMITIVE(message, int, "keyNull", 0, "%d");
-  CHECK_SIMPLE_DICT_PRIMITIVE(message, bool, "keyBool", true, "%d");
-  CHECK_SIMPLE_DICT_PRIMITIVE(message, int, "keyInt", 257, "%d");
-//  CHECK_SIMPLE_DICT_DATA(message, int, "keyData", 4, "%d");
-//  CHECK_SIMPLE_DICT(message, string, "keyString", "%s");
+  if (!message) {
+    return;
+  }
+
+  APP_LOG(APP_LOG_LEVEL_INFO, "Received SimpleAppMessage for namespace TEST:");
+  simple_dict_foreach(message, prv_print_dict, NULL);
 }
 
 static void prv_window_unload(Window *window) {
