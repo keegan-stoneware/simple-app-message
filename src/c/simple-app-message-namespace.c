@@ -17,12 +17,15 @@ SimpleAppMessageNamespace *simple_app_message_namespace_create(const char *name)
     return NULL;
   }
 
-  char *name_copy = malloc(strlen(name) + 1);
+  const size_t name_length = strlen(name);
+  char *name_copy = malloc(name_length + 1);
   if (!name_copy) {
     APP_LOG(APP_LOG_LEVEL_ERROR, "Could not malloc memory for new namespace name \"%s\"", name);
     free(namespace);
     return NULL;
   }
+  strncpy(name_copy, name, name_length);
+  name_copy[name_length] = '\0';
 
   *namespace = (SimpleAppMessageNamespace) {
     .name = name_copy,
@@ -71,11 +74,11 @@ SimpleAppMessageNamespace *simple_app_message_namespace_find_in_list(LinkedRoot 
   return linked_list_get(root, (uint16_t)index);
 }
 
-void simple_app_message_namespace_get_callbacks(const SimpleAppMessageNamespace *namespace,
+bool simple_app_message_namespace_get_callbacks(const SimpleAppMessageNamespace *namespace,
                                                 SimpleAppMessageCallbacks *callbacks_out,
                                                 void **context_out) {
   if (!namespace) {
-    return;
+    return false;
   }
 
   if (callbacks_out) {
@@ -85,6 +88,8 @@ void simple_app_message_namespace_get_callbacks(const SimpleAppMessageNamespace 
   if (context_out) {
     *context_out = namespace->user_context;
   }
+
+  return true;
 }
 
 void simple_app_message_namespace_destroy(SimpleAppMessageNamespace *namespace) {

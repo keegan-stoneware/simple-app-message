@@ -18,7 +18,7 @@ SimpleAppMessageNamespace *simple_app_message_namespace_find_in_list(LinkedRoot 
                                                                      const char *name,
                                                                      uint16_t *index_out);
 
-void simple_app_message_namespace_get_callbacks(const SimpleAppMessageNamespace *namespace,
+bool simple_app_message_namespace_get_callbacks(const SimpleAppMessageNamespace *namespace,
                                                 SimpleAppMessageCallbacks *callbacks_out,
                                                 void **context_out);
 
