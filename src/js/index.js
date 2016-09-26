@@ -12,6 +12,7 @@ var simpleAppMessage = {};
 
 simpleAppMessage._chunkSize = 0;
 simpleAppMessage._timeout = 10000;
+simpleAppMessage._chunkDelay = 500;
 simpleAppMessage._maxNamespaceLenth = 16;
 
 /**
@@ -117,12 +118,14 @@ simpleAppMessage._sendData = function(namespace, data, callback) {
  */
 simpleAppMessage._sendChunk = function(namespace, data, remaining, total) {
   return Plite(function(resolve, reject) {
-    Pebble.sendAppMessage(objectToMessageKeys({
-      SIMPLE_APP_MESSAGE_CHUNK_DATA: data,
-      SIMPLE_APP_MESSAGE_CHUNK_REMAINING: remaining,
-      SIMPLE_APP_MESSAGE_CHUNK_TOTAL: total,
-      SIMPLE_APP_MESSAGE_CHUNK_NAMESPACE: namespace
-    }), resolve, reject);
+    setTimeout(function() {
+      Pebble.sendAppMessage(objectToMessageKeys({
+        SIMPLE_APP_MESSAGE_CHUNK_DATA: data,
+        SIMPLE_APP_MESSAGE_CHUNK_REMAINING: remaining,
+        SIMPLE_APP_MESSAGE_CHUNK_TOTAL: total,
+        SIMPLE_APP_MESSAGE_CHUNK_NAMESPACE: namespace
+      }), resolve, reject);
+    }, simpleAppMessage._chunkDelay);
   });
 };
 

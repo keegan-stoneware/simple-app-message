@@ -16,6 +16,7 @@ describe('simpleAppMessage', function() {
     stubs.Pebble();
     simpleAppMessage._chunkSize = 0;
     simpleAppMessage._timeout = 50;
+    simpleAppMessage._chunkDelay = 50;
   });
 
   afterEach(function() {
@@ -159,6 +160,17 @@ describe('simpleAppMessage', function() {
   describe('._sendData', function() {
     it('calls _sendChunk for each chunk in order', function(done) {
       var callback = sinon.spy(function() {
+        var chunk1 = serialize(data).slice(0, 12);
+        var chunk2 = serialize(data).slice(12, 24);
+        var chunk3 = serialize(data).slice(24);
+        sinon.assert.callOrder(
+          simpleAppMessage._sendChunk.withArgs('TEST', chunk1, 2),
+          simpleAppMessage._sendChunk.withArgs('TEST', chunk2, 1),
+          simpleAppMessage._sendChunk.withArgs('TEST', chunk3, 0),
+          callback
+        );
+
+        simpleAppMessage._sendChunk.restore();
         done();
       });
       var data = {test1: 'value1', test2: 'value2'};
@@ -171,18 +183,6 @@ describe('simpleAppMessage', function() {
       Pebble.sendAppMessage.onThirdCall().callsArg(1);
 
       simpleAppMessage._sendData('TEST', data, callback);
-
-      var chunk1 = serialize(data).slice(0, 12);
-      var chunk2 = serialize(data).slice(12, 24);
-      var chunk3 = serialize(data).slice(24);
-      sinon.assert.callOrder(
-        simpleAppMessage._sendChunk.withArgs('TEST', chunk1, 2),
-        simpleAppMessage._sendChunk.withArgs('TEST', chunk2, 1),
-        simpleAppMessage._sendChunk.withArgs('TEST', chunk3, 0),
-        callback
-      );
-
-      simpleAppMessage._sendChunk.restore();
     });
 
     it('passes an error to the callback if failed', function(done) {
@@ -228,15 +228,17 @@ describe('simpleAppMessage', function() {
       var chunk = serialize({test1: 'TEST1', test2: 'TEST2'});
       var result = simpleAppMessage._sendChunk('TEST', chunk, 1, 2);
 
-      sinon.assert.calledWith(Pebble.sendAppMessage, utils.objectToMessageKeys({
-        SIMPLE_APP_MESSAGE_CHUNK_DATA: chunk,
-        SIMPLE_APP_MESSAGE_CHUNK_REMAINING: 1,
-        SIMPLE_APP_MESSAGE_CHUNK_TOTAL: 2,
-        SIMPLE_APP_MESSAGE_CHUNK_NAMESPACE: 'TEST'
-      }));
-
       assert.strictEqual(typeof result.then, 'function');
       assert.strictEqual(typeof result.catch, 'function');
+
+      result.then(function() {
+        sinon.assert.calledWith(Pebble.sendAppMessage, utils.objectToMessageKeys({
+          SIMPLE_APP_MESSAGE_CHUNK_DATA: chunk,
+          SIMPLE_APP_MESSAGE_CHUNK_REMAINING: 1,
+          SIMPLE_APP_MESSAGE_CHUNK_TOTAL: 2,
+          SIMPLE_APP_MESSAGE_CHUNK_NAMESPACE: 'TEST'
+        }));
+      });
     });
   });
 });
