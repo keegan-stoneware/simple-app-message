@@ -23,6 +23,8 @@ typedef enum SimpleAppMessageAssemblyDataType {
   SimpleAppMessageAssemblyDataType_Int,
   SimpleAppMessageAssemblyDataType_Data,
   SimpleAppMessageAssemblyDataType_String,
+
+  SimpleAppMessageAssemblyDataType_Count
 } SimpleAppMessageAssemblyDataType;
 
 typedef void (*SimpleAppMessageDeserializeCallback)(const char *key,

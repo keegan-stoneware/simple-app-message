@@ -74,6 +74,7 @@ static void prv_assembly_deserialize_callback(const char *key,
       simple_dict_update_string(dict, key, value);
       break;
     case SimpleAppMessageAssemblyDataType_Null:
+    case SimpleAppMessageAssemblyDataType_Count:
       APP_LOG(APP_LOG_LEVEL_WARNING, "Not handling deserialized key %s of type %d", key, type);
       break;
   }

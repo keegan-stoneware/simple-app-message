@@ -55,9 +55,7 @@ bool simple_app_message_assembly_update(SimpleAppMessageAssembly *assembly, cons
     prv_assembly_reset(assembly);
   }
 
-  // TODO probably remove me
   const char *namespace_string = namespace->value->cstring;
-  APP_LOG(APP_LOG_LEVEL_INFO, "Received SimpleAppMessage for namespace %s", namespace_string);
 
   const bool is_assembly_in_progress = prv_assembly_in_progress(assembly);
   const bool is_message_expected_for_assembly_in_progress =
@@ -110,6 +108,116 @@ bool simple_app_message_assembly_is_complete(const SimpleAppMessageAssembly *ass
           (assembly->state.chunks_remaining == 0));
 }
 
+static bool prv_deserialize_bool(const uint8_t **cursor, const uint8_t **data_out, size_t *n_out) {
+  if (!cursor) {
+    return false;
+  }
+
+  if (data_out) {
+    *data_out = *cursor;
+  } else {
+    return false;
+  }
+
+  const size_t bool_size = sizeof(bool);
+  if (n_out) {
+    *n_out = bool_size;
+  } else {
+    return false;
+  }
+
+  *cursor += bool_size;
+
+  return true;
+}
+
+static bool prv_deserialize_int(const uint8_t **cursor, const uint8_t **data_out, size_t *n_out) {
+  if (!cursor) {
+    return false;
+  }
+
+  if (data_out) {
+    *data_out = *cursor;
+  } else {
+    return false;
+  }
+
+  const size_t int_size = sizeof(int);
+  if (n_out) {
+    *n_out = int_size;
+  } else {
+    return false;
+  }
+
+  *cursor += int_size;
+
+  return true;
+}
+
+static bool prv_deserialize_data(const uint8_t **cursor, const uint8_t **data_out, size_t *n_out) {
+  if (!cursor) {
+    return false;
+  }
+
+  uint16_t data_size = *((uint16_t *)*cursor);
+  *cursor += sizeof(data_size);
+
+  if (data_out) {
+    *data_out = *cursor;
+  } else {
+    return false;
+  }
+
+  if (n_out) {
+    *n_out = data_size;
+  } else {
+    return false;
+  }
+
+  *cursor += data_size;
+
+  return true;
+}
+
+static bool prv_deserialize_string(const uint8_t **cursor, const uint8_t **data_out,
+                                   size_t *n_out) {
+  if (!cursor) {
+    return false;
+  }
+
+  const char *data = *((char **)cursor);
+  const size_t data_length = strlen(data) + 1;
+
+  if (data_out) {
+    *data_out = (uint8_t *)data;
+  } else {
+    return false;
+  }
+
+  if (n_out) {
+    *n_out = data_length;
+  } else {
+    return false;
+  }
+
+  *cursor += data_length;
+
+  return true;
+}
+
+//! @return True if successfully set data_out to deserialized data and n_out to deserialized data
+//! length
+typedef bool (*AssemblyDeserializeFunc)(const uint8_t **cursor, const uint8_t **data_out,
+                                        size_t *n_out);
+
+static const AssemblyDeserializeFunc s_deserialize_funcs[SimpleAppMessageAssemblyDataType_Count] = {
+  [SimpleAppMessageAssemblyDataType_Null] = NULL,
+  [SimpleAppMessageAssemblyDataType_Bool] = prv_deserialize_bool,
+  [SimpleAppMessageAssemblyDataType_Int] = prv_deserialize_int,
+  [SimpleAppMessageAssemblyDataType_Data] = prv_deserialize_data,
+  [SimpleAppMessageAssemblyDataType_String] = prv_deserialize_string,
+};
+
 bool simple_app_message_deserialize(const SimpleAppMessageAssembly *assembly,
                                     SimpleAppMessageDeserializeCallback callback, void *context) {
   if (!simple_app_message_assembly_is_complete(assembly)) {
@@ -117,13 +225,32 @@ bool simple_app_message_deserialize(const SimpleAppMessageAssembly *assembly,
   }
 
   const uint8_t *cursor = assembly->state.buffer;
-  while (cursor < assembly->state.buffer_cursor) {
-    // TODO deserialize and call user-provided callback
-    APP_LOG(APP_LOG_LEVEL_WARNING, "0x%02X\t%c", *cursor, *cursor);
-    cursor++;
+  uint8_t keys_left_to_read = *(cursor++);
+  while ((keys_left_to_read > 0) && (cursor < assembly->state.buffer_cursor)) {
+    const char *key = (char *)cursor;
+    const size_t key_length = strlen(key);
+    cursor += key_length + 1;
+
+    const SimpleAppMessageAssemblyDataType type = (SimpleAppMessageAssemblyDataType)*(cursor++);
+    if (type >= SimpleAppMessageAssemblyDataType_Count) {
+      return false;
+    }
+
+    const uint8_t *data = NULL;
+    size_t n = 0;
+    const AssemblyDeserializeFunc deserialize_func = s_deserialize_funcs[type];
+    if (deserialize_func && !deserialize_func(&cursor, &data, &n)) {
+      return false;
+    }
+
+    if (callback) {
+      callback(key, type, data, n, context);
+    }
+
+    keys_left_to_read--;
   }
 
-  return true;
+  return (keys_left_to_read == 0) && (cursor == assembly->state.buffer_cursor);
 }
 
 void simple_app_message_assembly_destroy(SimpleAppMessageAssembly *assembly) {
