@@ -12,7 +12,7 @@ var simpleAppMessage = {};
 
 simpleAppMessage._chunkSize = 0;
 simpleAppMessage._timeout = 10000;
-simpleAppMessage._chunkDelay = 500;
+simpleAppMessage._chunkDelay = 100;
 simpleAppMessage._maxNamespaceLenth = 16;
 
 /**
