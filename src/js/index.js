@@ -1,6 +1,5 @@
 'use strict';
 
-var messageKeys = require('message_keys');
 var objectToMessageKeys = require('./utils').objectToMessageKeys;
 var serialize = require('./lib/serialize');
 var Plite = require('plite');
@@ -26,7 +25,7 @@ simpleAppMessage.send = function(namespace, data, callback) {
   var requestTimeout;
 
   var chunkSizeResponseHandler = function(e) {
-    var chunkSize = e.payload[messageKeys.SIMPLE_APP_MESSAGE_CHUNK_SIZE];
+    var chunkSize = e.payload['SIMPLE_APP_MESSAGE_CHUNK_SIZE'];
 
     // this app message was not meant for us.
     if (typeof chunkSize === 'undefined') {

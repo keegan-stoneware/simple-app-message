@@ -3,7 +3,7 @@
   "author": "",
   "version": "1.0.0",
   "description": "A library to simplify interacting with Pebble's AppMessage API.",
-  "main": "src/js/index.js",
+  "main": "dist/js/index.js",
   "directories": {
     "test": "test"
   },
@@ -34,7 +34,7 @@
   "dependencies": {
     "pebble-events": "^1.0.2",
     "plite": "0.0.4",
-    "simple-dict": "^1.0.0"
+    "simple-dict": "../simple-dict/"
   },
   "pebble": {
     "projectType": "package",
