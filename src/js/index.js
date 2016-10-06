@@ -1,6 +1,5 @@
 'use strict';
 
-var messageKeys = require('message_keys');
 var objectToMessageKeys = require('./utils').objectToMessageKeys;
 var serialize = require('./lib/serialize');
 var Plite = require('plite');
@@ -12,7 +11,7 @@ var simpleAppMessage = {};
 
 simpleAppMessage._chunkSize = 0;
 simpleAppMessage._timeout = 10000;
-simpleAppMessage._chunkDelay = 500;
+simpleAppMessage._chunkDelay = Pebble.platform === 'pypkjs' ? 40 : 0;
 simpleAppMessage._maxNamespaceLenth = 16;
 
 /**
@@ -26,7 +25,7 @@ simpleAppMessage.send = function(namespace, data, callback) {
   var requestTimeout;
 
   var chunkSizeResponseHandler = function(e) {
-    var chunkSize = e.payload[messageKeys.SIMPLE_APP_MESSAGE_CHUNK_SIZE];
+    var chunkSize = e.payload['SIMPLE_APP_MESSAGE_CHUNK_SIZE'];
 
     // this app message was not meant for us.
     if (typeof chunkSize === 'undefined') {

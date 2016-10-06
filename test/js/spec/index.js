@@ -50,7 +50,7 @@ describe('simpleAppMessage', function() {
       Pebble.addEventListener
         .withArgs('appmessage')
         .callArgWith(1, {
-          payload: utils.objectToMessageKeys({ SIMPLE_APP_MESSAGE_CHUNK_SIZE: 64 })
+          payload: { SIMPLE_APP_MESSAGE_CHUNK_SIZE: 64 }
         });
 
       assert(Pebble.sendAppMessage.calledWith(
@@ -107,7 +107,7 @@ describe('simpleAppMessage', function() {
         Pebble.addEventListener
           .withArgs('appmessage')
           .callArgWith(1, {
-            payload: utils.objectToMessageKeys({ SIMPLE_APP_MESSAGE_CHUNK_SIZE: 0 })
+            payload: { SIMPLE_APP_MESSAGE_CHUNK_SIZE: 0 }
           });
       });
       assert(Pebble.sendAppMessage.calledWith(
@@ -132,12 +132,12 @@ describe('simpleAppMessage', function() {
       Pebble.addEventListener
         .withArgs('appmessage')
         .callArgWith(1, {
-          payload: { 1234: 'Not for you' }
+          payload: { SOME_OTHER_APP: 'Not for you' }
         });
       Pebble.addEventListener
         .withArgs('appmessage')
         .callArgWith(1, {
-          payload: utils.objectToMessageKeys({ SIMPLE_APP_MESSAGE_CHUNK_SIZE: 64 })
+          payload: { SIMPLE_APP_MESSAGE_CHUNK_SIZE: 64 }
         });
     });
 

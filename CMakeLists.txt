@@ -15,7 +15,7 @@ set(INCLUDES
   ~/Library/Application\ Support/Pebble\ SDK/SDKs/current/sdk-core/pebble/basalt/include
   ./node_modules/pebble-events/dist/include
   ./node_modules/@smallstoneapps/linked-list/dist/include
-  ./node_modules/pebble-string-dict/dist/include
+  ./node_modules/@keegan-stoneware/simple-dict/dist/include
   ./build/include
   ./build
   ./include

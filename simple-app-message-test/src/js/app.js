@@ -1,5 +1,5 @@
 'use strict';
-var simpleAppMessage = require('simple-app-message');
+var simpleAppMessage = require('@keegan-stoneware/simple-app-message');
 var testData = {
   keyNull: null,
   keyBool: true,
@@ -10,6 +10,6 @@ var testData = {
 
 Pebble.addEventListener('ready', function() {
   simpleAppMessage.send('TEST', testData, function(e) {
-    console.log('KEEGAN: e', e);
+    console.log('SimpleAppMessageTest - handler: ' + JSON.stringify(e));
   });
 });
