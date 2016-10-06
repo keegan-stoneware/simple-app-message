@@ -1,6 +1,7 @@
 'use strict';
 var stubs = require('../stubs');
 stubs.messageKeys();
+stubs.Pebble();
 
 var assert = require('assert');
 var simpleAppMessage = require('../../../src/js/index');
