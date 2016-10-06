@@ -6,7 +6,7 @@ A library to simplify interacting with Pebble's AppMessage API.
 
 ### CloudPebble
 
-If installing the package from CloudPebble, enter "simple-app-message" in
+If installing the package from CloudPebble, enter "@keegan-stoneware/simple-app-message" in
 the "Search NPM..." prompt in the *Dependencies* section of your project.,
 
 ### Pebble Tool
@@ -15,7 +15,7 @@ To install this package from the Pebble Tool, run the following command from
 your project's root directory:
 
 ```
-> pebble package install simple-app-message
+> pebble package install @keegan-stoneware/simple-app-message
 ```
 
 
