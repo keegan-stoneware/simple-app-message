@@ -1,6 +1,6 @@
 {
-  "name": "simple-app-message",
-  "author": "",
+  "name": "@keegan-stoneware/simple-app-message",
+  "author": "Keegan Lillo",
   "version": "1.0.0",
   "description": "A library to simplify interacting with Pebble's AppMessage API.",
   "main": "dist/js/index.js",
@@ -9,13 +9,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/keegan-lillo/simple-app-message.git"
+    "url": "git+https://github.com/keegan-stoneware/simple-app-message.git"
   },
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/keegan-lillo/simple-app-message/issues"
+    "url": "https://github.com/keegan-stoneware/simple-app-message/issues"
   },
-  "homepage": "https://github.com/keegan-lillo/simple-app-message#readme",
+  "homepage": "https://github.com/keegan-stoneware/simple-app-message#readme",
   "files": [
     "dist.zip"
   ],
@@ -34,7 +34,7 @@
   "dependencies": {
     "pebble-events": "^1.0.2",
     "plite": "0.0.4",
-    "simple-dict": "../simple-dict/"
+    "@keegan-stoneware/simple-dict": "^1.0.0"
   },
   "pebble": {
     "projectType": "package",
@@ -42,7 +42,8 @@
     "targetPlatforms": [
       "aplite",
       "basalt",
-      "chalk"
+      "chalk",
+      "diorite"
     ],
     "resources": {
       "media": []

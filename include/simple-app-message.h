@@ -1,6 +1,6 @@
 #pragma once
 
-#include <simple-dict/simple-dict.h>
+#include <@keegan-stoneware/simple-dict/simple-dict.h>
 
 #define SIMPLE_APP_MESSAGE_NAMESPACE_MAX_SIZE_BYTES (16)
 

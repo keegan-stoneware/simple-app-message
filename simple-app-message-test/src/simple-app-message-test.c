@@ -1,6 +1,6 @@
 #include <inttypes.h>
 #include <pebble.h>
-#include <simple-app-message/simple-app-message.h>
+#include <@keegan-stoneware/simple-app-message/simple-app-message.h>
 
 #define SIMPLE_APP_MESSAGE_NAMESPACE ("TEST")
 #define SIMPLE_APP_MESSAGE_INBOX_SIZE (48)
