@@ -11,6 +11,7 @@ var simpleAppMessage = {};
 
 simpleAppMessage._chunkSize = 0;
 simpleAppMessage._timeout = 10000;
+/* istanbul ignore next */
 simpleAppMessage._chunkDelay = Pebble.platform === 'pypkjs' ? 40 : 0;
 simpleAppMessage._maxNamespaceLenth = 16;
 

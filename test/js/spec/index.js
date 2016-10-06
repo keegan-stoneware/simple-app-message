@@ -17,7 +17,6 @@ describe('simpleAppMessage', function() {
     stubs.Pebble();
     simpleAppMessage._chunkSize = 0;
     simpleAppMessage._timeout = 50;
-    simpleAppMessage._chunkDelay = 50;
   });
 
   afterEach(function() {
