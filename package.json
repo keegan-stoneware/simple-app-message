@@ -1,7 +1,7 @@
 {
   "name": "@keegan-stoneware/simple-app-message",
   "author": "Keegan Lillo",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A library to simplify interacting with Pebble's AppMessage API.",
   "main": "dist/js/index.js",
   "directories": {
@@ -43,7 +43,8 @@
       "aplite",
       "basalt",
       "chalk",
-      "diorite"
+      "diorite",
+      "emery"
     ],
     "resources": {
       "media": []
