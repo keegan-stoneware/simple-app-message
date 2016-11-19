@@ -33,7 +33,6 @@ simpleAppMessage.send = function(namespace, data, callback) {
       return;
     }
 
-    Pebble.removeEventListener('appmessage', chunkSizeResponseHandler);
     clearTimeout(requestTimeout);
 
     if (!chunkSize || chunkSize <= 0) {
